@@ -1,5 +1,10 @@
 package com.bank.random;
 
+/**
+ * LCG (Linear Congruential Generator — Линейный конгруэнтный метод)
+ *  — это простой и быстрый алгоритм генерации псевдослучайных чисел, 
+ * используемый для создания последовательностей, имитирующих случайность.
+*/
 public class LCG {
     private long next;
     private long a = 1103515245L;
