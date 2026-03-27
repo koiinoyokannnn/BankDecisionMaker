@@ -1,0 +1,44 @@
+-J-Duser.language=
+-J-Duser.country=
+@options
+@packages
+--no-fonts
+-encoding
+'UTF-8'
+-protected
+-source
+'21'
+-sourcepath
+'/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2026. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'decisionmaker 1.0-SNAPSHOT API'
+-use
+-version
+-windowtitle
+'decisionmaker 1.0-SNAPSHOT API'
+com.bank
+com.bank.random
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/src/main/java = 1774623456791
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/tag-search-index.js = 1774623920735
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/overview-tree.html = 1774623920724
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/module-search-index.js = 1774623920734
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/index.html = 1774623920726
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/package-search-index.js = 1774623920735
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/index-all.html = 1774623920741
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/allpackages-index.html = 1774623920734
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/member-search-index.js = 1774623920735
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/overview-summary.html = 1774623920743
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/help-doc.html = 1774623920745
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/element-list = 1774623920699
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/search.html = 1774623920742
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/allclasses-index.html = 1774623920733
+/Users/ajdamir/Documents/Codes/Java/BankDecisionMaker/decisionmaker/target/reports/apidocs/type-search-index.js = 1774623920735
