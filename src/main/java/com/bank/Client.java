@@ -1,6 +1,7 @@
 package com.bank;
 
-import com.bank.random.*;
+import com.bank.random.LCG;
+import com.bank.random.PoissonDistribution;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +27,7 @@ public class Client {
         LCG lcg = new LCG(42);
         List<Integer> arrivals = new ArrayList<Integer>();
 
-        for (int i = 0; i < PoissonDistribution.Get(lambda, lcg); i++) {
+        for (int i = 0; i < PoissonDistribution.get(lambda, lcg); i++) {
             arrivals.add((int) (lcg.getRand() * 3600));
         }
         Client[] clients = new Client[arrivals.size()];
