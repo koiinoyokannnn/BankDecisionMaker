@@ -3,6 +3,12 @@ name: Deploy Docs
 on:
   push:
     branches: [ main ]
+  
+permissions:
+  contents: write  # Разрешение на пуш в репозиторий
+  pages: write     # Если используете GitHub Pages
+  id-token: write  # Опционально, для верификации
+
 jobs:
   build:
     runs-on: ubuntu-latest
