@@ -1,0 +1,22 @@
+# Примерный сценарий
+name: Deploy Docs
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+          distribution: 'adopt'
+      - name: Generate Javadoc
+        run: mvn javadoc:javadoc
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: target/site/apidocs # папка с javadoc
+          branch: gh-pages

@@ -42,28 +42,27 @@
                 <version>3.0.0-M5</version>
             </plugin>
 
-            <!-- Javadoc plugin (без дополнительных проверок) -->
-            <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-javadoc-plugin</artifactId>
-    <version>3.12.0</version>
-    <configuration>
-        <encoding>UTF-8</encoding>
-        <docencoding>UTF-8</docencoding>
-        <source>21</source>
-        <doclint>none</doclint>
-        <locale>ru_RU</locale> <!-- Опционально, для правильной сортировки и форматов -->
-    </configuration>
-    <!-- Добавляем выполнение при сборке -->
-    <executions>
-        <execution>
-            <id>attach-javadocs</id>
-            <goals>
-                <goal>jar</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>3.12.0</version>
+              <configuration>
+                  <encoding>UTF-8</encoding>
+                  <docencoding>UTF-8</docencoding>
+                  <source>21</source>
+                  <doclint>none</doclint>
+                  <locale>ru_RU</locale>
+              </configuration>
+              <executions>
+                  <execution>
+                      <id>attach-javadocs</id>
+                      <phase>package</phase> <!-- ✅ Теперь будет запускаться автоматически -->
+                      <goals>
+                          <goal>jar</goal>
+                      </goals>
+                  </execution>
+              </executions>
+          </plugin>
         </plugins>
     </build>
 </project>
