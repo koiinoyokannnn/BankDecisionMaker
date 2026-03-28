@@ -2,6 +2,10 @@ package com.bank;
 
 import java.util.Comparator;
 
+
+/**
+ * Класс события
+ */
 public class Event implements Comparable<Event>{
     private EventType type;
     private int duration;
