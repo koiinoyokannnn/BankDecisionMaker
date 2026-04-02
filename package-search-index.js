@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.bank"},{"l":"com.bank.random"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.bank"},{"l":"com.bank.app"},{"l":"com.bank.random"}];updateSearchResults();
