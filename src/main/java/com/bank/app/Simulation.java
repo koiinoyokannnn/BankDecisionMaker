@@ -1,5 +1,10 @@
-package com.bank;
+package com.bank.app;
 
+import com.bank.*;
+import com.bank.entities.Client;
+import com.bank.entities.Event;
+import com.bank.entities.EventType;
+import com.bank.entities.Operator;
 import com.bank.random.ExponentialDistribution;
 import com.bank.random.LCG;
 import lombok.Data;

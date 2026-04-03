@@ -1,4 +1,4 @@
-package com.bank;
+package com.bank.entities;
 
 import com.bank.random.LCG;
 import com.bank.random.PoissonDistribution;

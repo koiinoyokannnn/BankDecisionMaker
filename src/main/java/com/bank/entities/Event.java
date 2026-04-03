@@ -1,4 +1,4 @@
-package com.bank;
+package com.bank.entities;
 
 import lombok.Getter;
 import lombok.Setter;

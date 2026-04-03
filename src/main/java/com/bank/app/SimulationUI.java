@@ -1,7 +1,6 @@
 package com.bank.app;
 
 import com.bank.Configuration;
-import com.bank.Simulation;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -32,7 +31,6 @@ public class SimulationUI extends JFrame {
     private JComboBox<String> researchParamCombo;
     private JTextField researchStartField, researchEndField, researchStepField, researchRunsField;
     private JButton researchButton;
-    private JProgressBar researchProgressBar;
     private JTextArea researchLogArea;
     private DefaultTableModel researchTableModel;
     private JPanel researchChartPanel;
@@ -292,9 +290,6 @@ public class SimulationUI extends JFrame {
         panel.add(centerSplit, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        researchProgressBar = new JProgressBar();
-        researchProgressBar.setStringPainted(true);
-        bottomPanel.add(researchProgressBar, BorderLayout.NORTH);
 
         researchLogArea = new JTextArea(5, 20);
         researchLogArea.setEditable(false);

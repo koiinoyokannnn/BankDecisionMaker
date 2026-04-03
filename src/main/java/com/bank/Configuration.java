@@ -17,9 +17,22 @@ public class Configuration {
     /**Время общей симуляции в секундах*/
     private int simulationTimeSeconds;
 
-    /**Конструктор*/
+    /**Конструктор, в котором назначаются
+     * основные конфигурации системы:
+     * <b>Вероятности</b> возникновения каждого события,
+     * Их <b>длительности</b>,
+     * Основной <b>seed</b> для LCG,
+     * <b>lambda</b>,
+     * Булевое значение <b>варианта очереди</b>,
+     * Время симуляции модели*/
     public Configuration(double[] probabilities, int[] durations, int seed, int lambda, boolean isSingleQueue, int simulationTimeSeconds) {
-        this.probabilities = probabilities;
+        double probsSum = 0.0;
+        for (var prob : probabilities) {
+            probsSum += prob;
+        }
+
+        if (probsSum != 1) throw new IllegalArgumentException("Sum of probabilities must be 1");
+        else this.probabilities = probabilities;
         this.durations = durations;
         this.seed = seed;
         this.lambda = lambda;
