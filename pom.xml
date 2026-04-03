@@ -64,6 +64,7 @@
                     <source>21</source>
                     <doclint>none</doclint>
                     <locale>ru_RU</locale>
+                    <show>private</show>
                 </configuration>
             </plugin>
         </plugins>
