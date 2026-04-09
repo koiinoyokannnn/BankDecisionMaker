@@ -15,6 +15,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -169,7 +170,8 @@ public class SimulationUI extends JFrame {
             sim.run();
 
             avgWaitLabel.setText(df.format(sim.getAvgWaitTime()) + " сек");
-            avgBusyLabel.setText(df.format(sim.getAvgOperatorBusyTime()) + " сек");
+            double avgUtilization = Arrays.stream(sim.getOperatorUtilization()).average().orElse(0.0);
+            avgBusyLabel.setText(df.format(avgUtilization) + " %");
             avgSpentLabel.setText(df.format(sim.getAvgTimeSpent()) + " сек");
 
             updateCharts(sim);
