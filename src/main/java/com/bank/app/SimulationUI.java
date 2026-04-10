@@ -1,6 +1,7 @@
 package com.bank.app;
 
 import com.bank.Configuration;
+import com.bank.random.LCG;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -14,15 +15,14 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 
 public class SimulationUI extends JFrame {
     // --- Single Run Components ---
     private JTextField lambdaField, timeField, seedField;
     private JCheckBox singleQueueCheck;
+    private JCheckBox systemTimeSeedCheck;
     private JTextField[] probFields = new JTextField[5];
     private JTextField[] durFields = new JTextField[5];
     private JLabel avgWaitLabel, avgBusyLabel, avgSpentLabel;
@@ -43,7 +43,7 @@ public class SimulationUI extends JFrame {
     private final Random seedRandom = new Random();
 
     public SimulationUI() {
-        setTitle("Bank Simulation UI + Research");
+        setTitle("Симуляция массового обслуживания");
         setSize(1300, 750);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -54,7 +54,14 @@ public class SimulationUI extends JFrame {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Одиночный прогон", createSingleRunPanel());
         tabbedPane.addTab("Исследование (ПЗ №6)", createResearchPanel());
+        tabbedPane.addTab("Графики распределений", createDistributionPanel());
         add(tabbedPane);
+    }
+
+    private int resolveSeed() {
+        return systemTimeSeedCheck.isSelected()
+            ? (int) System.currentTimeMillis()
+            : Integer.parseInt(seedField.getText().trim());
     }
 
     // ================= SINGLE RUN TAB =================
@@ -101,6 +108,14 @@ public class SimulationUI extends JFrame {
         gbc.gridy++;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
+        systemTimeSeedCheck = new JCheckBox("Использовать системное время вместо seed");
+        systemTimeSeedCheck.addActionListener(e -> updateSeedFieldState());
+        panel.add(systemTimeSeedCheck, gbc);
+        gbc.gridwidth = 1;
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
         singleQueueCheck = new JCheckBox("Единая очередь");
         panel.add(singleQueueCheck, gbc);
         gbc.gridwidth = 1;
@@ -136,7 +151,16 @@ public class SimulationUI extends JFrame {
         runButton.addActionListener(this::runSingleSimulation);
         panel.add(runButton, gbc);
 
+        updateSeedFieldState();
         return panel;
+    }
+
+    private void updateSeedFieldState() {
+        boolean useSystemTime = systemTimeSeedCheck.isSelected();
+        seedField.setEnabled(!useSystemTime);
+        if (useSystemTime) {
+            seedField.setText(String.valueOf(System.currentTimeMillis()));
+        }
     }
 
     private JPanel createResultsPanel() {
@@ -182,16 +206,16 @@ public class SimulationUI extends JFrame {
     }
 
     private Configuration parseConfig() {
-        int lambda = Integer.parseInt(lambdaField.getText());
-        int time = Integer.parseInt(timeField.getText());
-        int seed = Integer.parseInt(seedField.getText());
+        int lambda = Integer.parseInt(lambdaField.getText().trim());
+        int time = Integer.parseInt(timeField.getText().trim());
+        int seed = resolveSeed();
         boolean isSingle = singleQueueCheck.isSelected();
 
         double[] probs = new double[5];
         int[] durs = new int[5];
         for (int i = 0; i < 5; i++) {
-            probs[i] = Double.parseDouble(probFields[i].getText());
-            durs[i] = Integer.parseInt(durFields[i].getText());
+            probs[i] = Double.parseDouble(probFields[i].getText().trim());
+            durs[i] = Integer.parseInt(durFields[i].getText().trim());
         }
         return new Configuration(probs, durs, seed, lambda, isSingle, time);
     }
@@ -206,7 +230,8 @@ public class SimulationUI extends JFrame {
         }
         JFreeChart utilChart = ChartFactory.createBarChart(
             "Загрузка операторов", "Оператор", "%", utilDataset,
-            PlotOrientation.VERTICAL, true, true, false);
+            PlotOrientation.VERTICAL, true, true, false
+        );
         chartsPanel.add(new ChartPanel(utilChart));
 
         try {
@@ -218,7 +243,8 @@ public class SimulationUI extends JFrame {
             }
             JFreeChart waitChart = ChartFactory.createBarChart(
                 "Ожидание по типам", "Тип", "Сек", waitDataset,
-                PlotOrientation.VERTICAL, true, true, false);
+                PlotOrientation.VERTICAL, true, true, false
+            );
             chartsPanel.add(new ChartPanel(waitChart));
         } catch (Exception ignored) {
             chartsPanel.add(new JLabel("Добавьте getAvgWaitTimeByType() в Simulation"));
@@ -226,6 +252,64 @@ public class SimulationUI extends JFrame {
 
         chartsPanel.revalidate();
         chartsPanel.repaint();
+    }
+
+    // ================= DISTRIBUTION TAB =================
+    private JPanel createDistributionPanel() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBorder(BorderFactory.createTitledBorder("Параметры"));
+        JLabel infoLabel = new JLabel(
+            "Используются параметры из одиночного прогона: seed, lambda, вероятности. Размер выборки = время симуляции.",
+            SwingConstants.LEFT
+        );
+        infoLabel.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+        topPanel.add(infoLabel, BorderLayout.CENTER);
+
+        JButton plotButton = new JButton("Построить графики по текущим настройкам");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.add(plotButton);
+        topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        panel.add(topPanel, BorderLayout.NORTH);
+
+        JPanel chartsGrid = new JPanel(new GridLayout(2, 2, 5, 5));
+        chartsGrid.setBorder(BorderFactory.createTitledBorder("Визуализация распределений"));
+
+        chartsGrid.add(new JLabel("LCG (Равномерное)", SwingConstants.CENTER));
+        chartsGrid.add(new JLabel("Экспоненциальное", SwingConstants.CENTER));
+        chartsGrid.add(new JLabel("Пуассоновское", SwingConstants.CENTER));
+        chartsGrid.add(new JLabel("Дискретное (Операции)", SwingConstants.CENTER));
+
+        panel.add(chartsGrid, BorderLayout.CENTER);
+
+        plotButton.addActionListener(e -> {
+            try {
+                int seed = resolveSeed();
+                int sampleSize = Integer.parseInt(timeField.getText().trim());
+                int lambda = Integer.parseInt(lambdaField.getText().trim());
+
+                if (sampleSize <= 0) {
+                    throw new IllegalArgumentException("Время симуляции должно быть > 0");
+                }
+
+                chartsGrid.removeAll();
+
+                chartsGrid.add(createLCGChart(new LCG(seed), sampleSize));
+                chartsGrid.add(createExponentialChart(new LCG(seed), lambda, sampleSize));
+                chartsGrid.add(createPoissonChart(new LCG(seed), lambda, sampleSize));
+                chartsGrid.add(createDiscreteChart(new LCG(seed), sampleSize));
+
+                chartsGrid.revalidate();
+                chartsGrid.repaint();
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Ошибка: " + ex.getMessage(), "Ошибка ввода", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        return panel;
     }
 
     // ================= RESEARCH TAB =================
@@ -239,7 +323,8 @@ public class SimulationUI extends JFrame {
         gbc.insets = new Insets(3, 3, 3, 3);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         controlPanel.add(new JLabel("Параметр:"), gbc);
         gbc.gridx = 1;
         researchParamCombo = new JComboBox<>(new String[]{"Lambda", "Simulation Time"});
@@ -280,7 +365,6 @@ public class SimulationUI extends JFrame {
 
         researchChartPanel = new JPanel(new BorderLayout());
         researchChartPanel.setBorder(BorderFactory.createTitledBorder("График зависимости"));
-        // Добавляем заглушку
         researchChartPanel.add(new JLabel("График появится после исследования", SwingConstants.CENTER), BorderLayout.CENTER);
         centerSplit.setTopComponent(researchChartPanel);
 
@@ -306,7 +390,7 @@ public class SimulationUI extends JFrame {
         try {
             researchButton.setEnabled(false);
             researchTableModel.setRowCount(0);
-            researchResults.clear(); // Очищаем результаты
+            researchResults.clear();
             researchChartPanel.removeAll();
             researchChartPanel.add(new JLabel("Вычисление...", SwingConstants.CENTER), BorderLayout.CENTER);
             researchChartPanel.revalidate();
@@ -387,10 +471,7 @@ public class SimulationUI extends JFrame {
         @Override
         protected void process(List<ResearchPoint> chunks) {
             for (ResearchPoint p : chunks) {
-                // Добавляем в список результатов
                 researchResults.add(p);
-
-                // Добавляем в таблицу
                 researchTableModel.addRow(new Object[]{
                     df.format(p.value),
                     df.format(p.avgWait),
@@ -408,7 +489,8 @@ public class SimulationUI extends JFrame {
                 updateResearchChart();
                 log("Исследование завершено успешно.");
             } catch (Exception ex) {
-                log("Ошибка: " + ex.getCause().getMessage());
+                Throwable cause = ex.getCause();
+                log("Ошибка: " + (cause != null ? cause.getMessage() : ex.getMessage()));
                 ex.printStackTrace();
                 researchChartPanel.removeAll();
                 researchChartPanel.add(new JLabel("Ошибка построения графика", SwingConstants.CENTER), BorderLayout.CENTER);
@@ -483,8 +565,124 @@ public class SimulationUI extends JFrame {
     static class ResearchPoint {
         double value, avgWait, avgBusy, avgSpent;
         ResearchPoint(double v, double w, double b, double s) {
-            value = v; avgWait = w; avgBusy = b; avgSpent = s;
+            value = v;
+            avgWait = w;
+            avgBusy = b;
+            avgSpent = s;
         }
+    }
+
+    // График равномерного распределения LCG
+    private ChartPanel createLCGChart(LCG lcg, int sampleSize) {
+        int bins = 20;
+        int[] counts = new int[bins];
+        for (int i = 0; i < sampleSize; i++) {
+            float val = lcg.getRand();
+            int bin = Math.min((int) (val * bins), bins - 1);
+            counts[bin]++;
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        for (int i = 0; i < bins; i++) {
+            dataset.addValue(counts[i], "Частота", String.format("%.2f", (i + 0.5) / bins));
+        }
+
+        JFreeChart chart = ChartFactory.createBarChart(
+            "LCG Равномерное распределение", "Интервал", "Кол-во", dataset,
+            PlotOrientation.VERTICAL, false, true, false
+        );
+        return new ChartPanel(chart);
+    }
+
+    // График экспоненциального распределения
+    private ChartPanel createExponentialChart(LCG lcg, double lambdaPerHour, int sampleSize) {
+        int bins = 20;
+
+        // Переводим "клиентов/час" в "в секунду", как в Simulation
+        double lambdaPerSec = lambdaPerHour / 3600.0;
+
+        // Для наглядности показываем хвост примерно до 5 средних значений
+        double maxVal = 5.0 / lambdaPerSec;
+
+        int[] counts = new int[bins];
+
+        for (int i = 0; i < sampleSize; i++) {
+            double val = com.bank.random.ExponentialDistribution.get(lambdaPerSec, lcg);
+            if (val < maxVal) {
+                int bin = (int) (val / maxVal * bins);
+                if (bin >= bins) bin = bins - 1;
+                counts[bin]++;
+            }
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        for (int i = 0; i < bins; i++) {
+            dataset.addValue(counts[i], "Частота", String.format("%.1f", i * maxVal / bins));
+        }
+
+        JFreeChart chart = ChartFactory.createBarChart(
+            "Экспоненциальное распределение", "Значение (сек)", "Кол-во", dataset,
+            PlotOrientation.VERTICAL, false, true, false
+        );
+        return new ChartPanel(chart);
+    }
+
+    // График распределения Пуассона
+    private ChartPanel createPoissonChart(LCG lcg, double lambda, int sampleSize) {
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (int i = 0; i < sampleSize; i++) {
+            int val = com.bank.random.PoissonDistribution.get(lambda, lcg);
+            counts.put(val, counts.getOrDefault(val, 0) + 1);
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        List<Integer> keys = new ArrayList<>(counts.keySet());
+        Collections.sort(keys);
+        for (int k : keys) {
+            dataset.addValue(counts.get(k), "Частота", String.valueOf(k));
+        }
+
+        JFreeChart chart = ChartFactory.createBarChart(
+            "Распределение Пуассона", "k", "Кол-во", dataset,
+            PlotOrientation.VERTICAL, false, true, false
+        );
+        return new ChartPanel(chart);
+    }
+
+    // График дискретного распределения (типы операций)
+    private ChartPanel createDiscreteChart(LCG lcg, int sampleSize) {
+        double[] probs = new double[5];
+        try {
+            for (int i = 0; i < 5; i++) {
+                probs[i] = Double.parseDouble(probFields[i].getText().trim());
+            }
+        } catch (Exception e) {
+            probs = new double[]{0.1, 0.19, 0.32, 0.24, 0.15};
+        }
+
+        int[] counts = new int[5];
+        for (int i = 0; i < sampleSize; i++) {
+            double r = lcg.getRand();
+            double cumulative = 0.0;
+            for (int j = 0; j < 5; j++) {
+                cumulative += probs[j];
+                if (r < cumulative) {
+                    counts[j]++;
+                    break;
+                }
+            }
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        for (int i = 0; i < 5; i++) {
+            dataset.addValue(counts[i], "Частота", "Тип " + (i + 1));
+        }
+
+        JFreeChart chart = ChartFactory.createBarChart(
+            "Дискретное распределение (Операции)", "Тип", "Кол-во", dataset,
+            PlotOrientation.VERTICAL, false, true, false
+        );
+        return new ChartPanel(chart);
     }
 
     public static void main(String[] args) {
