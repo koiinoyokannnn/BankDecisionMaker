@@ -1,6 +1,9 @@
 package com.bank.app;
 
 import com.bank.Configuration;
+import com.bank.random.ExponentialDistribution;
+import com.bank.random.LCG;
+import com.bank.random.PoissonDistribution;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -54,6 +57,7 @@ public class SimulationUI extends JFrame {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Одиночный прогон", createSingleRunPanel());
         tabbedPane.addTab("Исследование (ПЗ №6)", createResearchPanel());
+        tabbedPane.addTab("Графики распределений", createDistributionsPanel());
         add(tabbedPane);
     }
 
@@ -228,8 +232,198 @@ public class SimulationUI extends JFrame {
         chartsPanel.repaint();
     }
 
-    // ================= RESEARCH TAB =================
+    // ================= DISTRIBUTIONS TAB =================
 
+    private JPanel createDistributionsPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout(5, 5));
+        
+        // Панель настроек
+        JPanel settingsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        settingsPanel.setBorder(BorderFactory.createTitledBorder("Настройки генерации"));
+        
+        JLabel sampleSizeLabel = new JLabel("Размер выборки:");
+        JTextField sampleSizeField = new JTextField("10000", 6);
+        JLabel seedLabel = new JLabel("Seed:");
+        JTextField seedFieldDist = new JTextField("42", 6);
+        JLabel lambdaLabel = new JLabel("Lambda (для эксп. и Пуассона):");
+        JTextField lambdaFieldDist = new JTextField("5.0", 6);
+        JButton generateButton = new JButton("Обновить графики");
+        
+        settingsPanel.add(sampleSizeLabel);
+        settingsPanel.add(sampleSizeField);
+        settingsPanel.add(seedLabel);
+        settingsPanel.add(seedFieldDist);
+        settingsPanel.add(lambdaLabel);
+        settingsPanel.add(lambdaFieldDist);
+        settingsPanel.add(generateButton);
+        
+        mainPanel.add(settingsPanel, BorderLayout.NORTH);
+        
+        // Контейнер для графиков
+        JPanel chartsContainer = new JPanel(new GridLayout(2, 2, 10, 10));
+        chartsContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // Панели для графиков (будут заполнены при нажатии кнопки)
+        JPanel lcgChartPanel = new JPanel(new BorderLayout());
+        lcgChartPanel.setBorder(BorderFactory.createTitledBorder("LCG - Равномерное распределение [0, 1]"));
+        lcgChartPanel.setName("lcgPanel");
+        lcgChartPanel.add(new JLabel("Нажмите 'Обновить графики'", SwingConstants.CENTER), BorderLayout.CENTER);
+        chartsContainer.add(lcgChartPanel);
+        
+        JPanel expChartPanel = new JPanel(new BorderLayout());
+        expChartPanel.setBorder(BorderFactory.createTitledBorder("Экспоненциальное распределение"));
+        expChartPanel.setName("expPanel");
+        expChartPanel.add(new JLabel("Нажмите 'Обновить графики'", SwingConstants.CENTER), BorderLayout.CENTER);
+        chartsContainer.add(expChartPanel);
+        
+        JPanel poisChartPanel = new JPanel(new BorderLayout());
+        poisChartPanel.setBorder(BorderFactory.createTitledBorder("Пуассоновское распределение"));
+        poisChartPanel.setName("poisPanel");
+        poisChartPanel.add(new JLabel("Нажмите 'Обновить графики'", SwingConstants.CENTER), BorderLayout.CENTER);
+        chartsContainer.add(poisChartPanel);
+        
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.setBorder(BorderFactory.createTitledBorder("Информация"));
+        JTextArea infoArea = new JTextArea();
+        infoArea.setEditable(false);
+        infoArea.setText("LCG - генератор псевдослучайных чисел\n" +
+                        "Экспоненциальное - время между событиями\n" +
+                        "Пуассоновское - количество событий за интервал");
+        infoPanel.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+        chartsContainer.add(infoPanel);
+        
+        mainPanel.add(chartsContainer, BorderLayout.CENTER);
+        
+        // Обработчик кнопки
+        generateButton.addActionListener(e -> {
+            try {
+                int sampleSize = Integer.parseInt(sampleSizeField.getText());
+                long seed = Long.parseLong(seedFieldDist.getText());
+                double lambda = Double.parseDouble(lambdaFieldDist.getText());
+                
+                if (sampleSize <= 0) throw new IllegalArgumentException("Размер выборки должен быть > 0");
+                if (lambda <= 0) throw new IllegalArgumentException("Lambda должна быть > 0");
+                
+                updateDistributionCharts(chartsContainer, sampleSize, seed, lambda);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(mainPanel, "Ошибка: " + ex.getMessage(), "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        return mainPanel;
+    }
+    
+    private void updateDistributionCharts(JPanel container, int sampleSize, long seed, double lambda) {
+        container.removeAll();
+        
+        // 1. LCG - Равномерное распределение
+        LCG lcg = new LCG(seed);
+        float[] lcgSamples = lcg.generateSequence(sampleSize);
+        
+        DefaultCategoryDataset lcgDataset = new DefaultCategoryDataset();
+        int[] lcgHistogram = new int[10];
+        for (float val : lcgSamples) {
+            int bin = Math.min((int)(val * 10), 9);
+            lcgHistogram[bin]++;
+        }
+        for (int i = 0; i < 10; i++) {
+            lcgDataset.addValue(lcgHistogram[i], "Частота", String.valueOf(i / 10.0));
+        }
+        
+        JFreeChart lcgChart = ChartFactory.createBarChart(
+            "Гистограмма LCG", "Интервал", "Частота", lcgDataset,
+            PlotOrientation.VERTICAL, false, true, false);
+        JPanel lcgPanel = new JPanel(new BorderLayout());
+        lcgPanel.setBorder(BorderFactory.createTitledBorder("LCG - Равномерное распределение [0, 1]"));
+        lcgPanel.add(new ChartPanel(lcgChart), BorderLayout.CENTER);
+        container.add(lcgPanel);
+        
+        // 2. Экспоненциальное распределение
+        LCG lcgExp = new LCG(seed);
+        double[] expSamples = new double[sampleSize];
+        for (int i = 0; i < sampleSize; i++) {
+            expSamples[i] = ExponentialDistribution.get(lambda, lcgExp);
+        }
+        
+        DefaultCategoryDataset expDataset = new DefaultCategoryDataset();
+        int[] expHistogram = new int[15];
+        double maxExp = 5.0 / lambda; // Ограничим для наглядности
+        for (double val : expSamples) {
+            if (val < maxExp) {
+                int bin = Math.min((int)(val * 15 / maxExp), 14);
+                expHistogram[bin]++;
+            }
+        }
+        for (int i = 0; i < 15; i++) {
+            expDataset.addValue(expHistogram[i], "Частота", String.format("%.2f", i * maxExp / 15));
+        }
+        
+        JFreeChart expChart = ChartFactory.createBarChart(
+            "Гистограмма экспоненциального распределения", "Значение", "Частота", expDataset,
+            PlotOrientation.VERTICAL, false, true, false);
+        JPanel expPanel = new JPanel(new BorderLayout());
+        expPanel.setBorder(BorderFactory.createTitledBorder("Экспоненциальное распределение (λ=" + lambda + ")"));
+        expPanel.add(new ChartPanel(expChart), BorderLayout.CENTER);
+        container.add(expPanel);
+        
+        // 3. Пуассоновское распределение
+        LCG lcgPois = new LCG(seed);
+        int[] poisSamples = new int[sampleSize];
+        int maxPois = 0;
+        for (int i = 0; i < sampleSize; i++) {
+            poisSamples[i] = PoissonDistribution.get(lambda, lcgPois);
+            if (poisSamples[i] > maxPois) maxPois = poisSamples[i];
+        }
+        
+        DefaultCategoryDataset poisDataset = new DefaultCategoryDataset();
+        int histogramSize = Math.min(maxPois + 1, 20);
+        int[] poisHistogram = new int[histogramSize];
+        for (int val : poisSamples) {
+            if (val < histogramSize) {
+                poisHistogram[val]++;
+            } else {
+                poisHistogram[histogramSize - 1]++;
+            }
+        }
+        for (int i = 0; i < histogramSize; i++) {
+            poisDataset.addValue(poisHistogram[i], "Частота", String.valueOf(i));
+        }
+        
+        JFreeChart poisChart = ChartFactory.createBarChart(
+            "Гистограмма пуассоновского распределения", "k (кол-во событий)", "Частота", poisDataset,
+            PlotOrientation.VERTICAL, false, true, false);
+        JPanel poisPanel = new JPanel(new BorderLayout());
+        poisPanel.setBorder(BorderFactory.createTitledBorder("Пуассоновское распределение (λ=" + lambda + ")"));
+        poisPanel.add(new ChartPanel(poisChart), BorderLayout.CENTER);
+        container.add(poisPanel);
+        
+        // 4. Информационная панель
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.setBorder(BorderFactory.createTitledBorder("Статистика"));
+        JTextArea infoArea = new JTextArea();
+        infoArea.setEditable(false);
+        
+        double lcgMean = Arrays.stream(lcgSamples).average().orElse(0);
+        double expMean = Arrays.stream(expSamples).average().orElse(0);
+        double poisMean = Arrays.stream(poisSamples).mapToDouble(i -> i).average().orElse(0);
+        
+        infoArea.setText(String.format(
+            "LCG:\n  Среднее: %.4f (ожидается ~0.5)\n  Мин: %.4f\n  Макс: %.4f\n\n" +
+            "Экспоненциальное:\n  Среднее: %.4f (ожидается ~%.4f)\n  Мин: %.4f\n  Макс: %.4f\n\n" +
+            "Пуассоновское:\n  Среднее: %.4f (ожидается ~%.4f)\n  Мин: %d\n  Макс: %d",
+            lcgMean, Arrays.stream(lcgSamples).min().orElse(0), Arrays.stream(lcgSamples).max().orElse(0),
+            expMean, 1.0/lambda, Arrays.stream(expSamples).min().orElse(0), Arrays.stream(expSamples).max().orElse(0),
+            poisMean, lambda, Arrays.stream(poisSamples).min().orElse(0), Arrays.stream(poisSamples).max().orElse(0)
+        ));
+        infoPanel.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+        container.add(infoPanel);
+        
+        container.revalidate();
+        container.repaint();
+    }
+
+    // ================= RESEARCH TAB =================
+    
     private JPanel createResearchPanel() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
 

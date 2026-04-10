@@ -1,1 +1,8 @@
-target/classes/
+```
+# Compiled and build artifacts
+*.class
+target/
+
+# Dependencies
+.mvn/
+```
